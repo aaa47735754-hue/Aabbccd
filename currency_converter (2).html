@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>匯率換算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .converter-box {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        select {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 100px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .swap-btn {
+            display: block;
+            margin: 20px auto;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .swap-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .result {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .result-amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .result-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .rate-info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💱 匯率換算器</h1>
+        
+        <div class="converter-box">
+            <label>從</label>
+            <div class="input-group">
+                <input type="number" id="fromAmount" value="1000" step="0.01" min="0">
+                <select id="fromCurrency">
+                    <option value="TWD">台幣 (TWD)</option>
+                    <option value="USD">美金 (USD)</option>
+                    <option value="JPY">日幣 (JPY)</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="swap-btn" onclick="swapCurrencies()">⇅ 交換幣別</button>
+
+        <div class="converter-box">
+            <label>到</label>
+            <div class="input-group">
+                <input type="number" id="toAmount" readonly>
+                <select id="toCurrency">
+                    <option value="TWD">台幣 (TWD)</option>
+                    <option value="USD" selected>美金 (USD)</option>
+                    <option value="JPY">日幣 (JPY)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="result">
+            <div class="result-amount" id="resultAmount">-</div>
+            <div class="result-label" id="resultLabel">請輸入金額</div>
+        </div>
+
+        <div class="rate-info" id="rateInfo">
+            匯率為參考值，實際匯率請以銀行公告為準
+        </div>
+    </div>
+
+    <script>
+        // 匯率資料（以台幣為基準）
+        const rates = {
+            TWD: 1,
+            USD: 0.0314,  // 1 TWD = 0.0314 USD (約 31.8 TWD = 1 USD)
+            JPY: 4.72     // 1 TWD = 4.72 JPY (約 0.212 TWD = 1 JPY)
+        };
+
+        function convert() {
+            const fromAmount = parseFloat(document.getElementById('fromAmount').value);
+            const fromCurrency = document.getElementById('fromCurrency').value;
+            const toCurrency = document.getElementById('toCurrency').value;
+
+            if (isNaN(fromAmount) || fromAmount < 0) {
+                document.getElementById('resultAmount').textContent = '-';
+                document.getElementById('resultLabel').textContent = '請輸入有效金額';
+                document.getElementById('toAmount').value = '';
+                return;
+            }
+
+            // 轉換邏輯：先轉成台幣，再轉成目標幣別
+            const amountInTWD = fromAmount / rates[fromCurrency];
+            const result = amountInTWD * rates[toCurrency];
+
+            document.getElementById('toAmount').value = result.toFixed(2);
+            document.getElementById('resultAmount').textContent = result.toLocaleString('zh-TW', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            const currencySymbols = {
+                TWD: 'NT$',
+                USD: '$',
+                JPY: '¥'
+            };
+            
+            document.getElementById('resultLabel').textContent = 
+                `${fromAmount.toLocaleString()} ${fromCurrency} = ${result.toFixed(2)} ${toCurrency}`;
+
+            // 顯示匯率資訊
+            const rate = (rates[toCurrency] / rates[fromCurrency]).toFixed(4);
+            document.getElementById('rateInfo').textContent = 
+                `匯率: 1 ${fromCurrency} = ${rate} ${toCurrency}`;
+        }
+
+        function swapCurrencies() {
+            const fromCurrency = document.getElementById('fromCurrency').value;
+            const toCurrency = document.getElementById('toCurrency').value;
+            
+            document.getElementById('fromCurrency').value = toCurrency;
+            document.getElementById('toCurrency').value = fromCurrency;
+            
+            const fromAmount = document.getElementById('fromAmount').value;
+            const toAmount = document.getElementById('toAmount').value;
+            
+            if (toAmount) {
+                document.getElementById('fromAmount').value = toAmount;
+            }
+            
+            convert();
+        }
+
+        // 監聽輸入和選擇變化
+        document.getElementById('fromAmount').addEventListener('input', convert);
+        document.getElementById('fromCurrency').addEventListener('change', convert);
+        document.getElementById('toCurrency').addEventListener('change', convert);
+
+        // 初始轉換
+        convert();
+    </script>
+</body>
+</html>
